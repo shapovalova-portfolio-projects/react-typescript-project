@@ -7,10 +7,20 @@ export const Router =  function App() {
       <Routes>
         <Route path='/' element={routes.layout.component}>
           {Object.keys(routes).map((routeKey: string) => {
-            const path = routes[routeKey].localPath;
-            const index = !!path;
-            const component = routes[routeKey].component;
-            return <Route key={routeKey} index={index} path={path} element={component} />
+            const route = routes[routeKey];
+            if (!route.path) {
+              return null;
+            }
+            const routeProps: { [propName: string]: any } = {
+              element: route.component
+            };
+            const path = route.localPath;
+            if (!!path) {
+              routeProps.path = path;
+            } else {
+              routeProps.index = true;
+            }
+              return (<Route key={routeKey} {...routeProps} />);
           })}
         </Route>
       </Routes>

@@ -4,7 +4,7 @@ import { routes } from '../router'
 
 export const Layout = () => {
     return (
-        <div>
+        <>
             <nav>
                 <ul>
                     {Object.keys(routes).map((routeKey: string) => routes[routeKey].path && (
@@ -15,6 +15,6 @@ export const Layout = () => {
                 </ul>
             </nav>
             <Outlet />
-        </div>
+        </>
     );
 };
