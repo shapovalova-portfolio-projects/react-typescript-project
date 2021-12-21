@@ -1,0 +1,15 @@
+.files-list {
+    padding-left: 0;
+    list-style-type: none;
+}
+
+.file-name {
+    padding: 5px;
+    width: 100%;
+    background: transparent;
+    border: none;
+    text-align: left;
+}
+.file-name.active {
+    background-color: #abc;
+}
