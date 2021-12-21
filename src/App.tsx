@@ -1,10 +1,12 @@
-import React from 'react';
 import { Router } from './router';
+import { ProjectQueryClientProvider } from './query-client';
 import './App.css';
 
 function App() {
   return (
-    <Router />
+    <ProjectQueryClientProvider>
+      <Router />
+    </ProjectQueryClientProvider>
   );
 }
 
