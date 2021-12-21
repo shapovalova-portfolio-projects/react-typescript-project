@@ -8,7 +8,7 @@ export const Router =  function App() {
         <Route path='/' element={routes.layout.component}>
           {Object.keys(routes).map((routeKey: string) => {
             const route = routes[routeKey];
-            if (!route.path) {
+            if (!route.localPath) {
               return null;
             }
             const routeProps: { [propName: string]: any } = {
