@@ -59,16 +59,12 @@ export const MemoryLibrary = () => {
         setSelectedFileContent(files[fileKey] || '');
     };
     const onChangeFile = (event: BaseSyntheticEvent) => {
-        event.stopPropagation();
-        event.preventDefault();
         updateFiles(event?.target?.files?.[0]);
     }
     const onChangeContent = (event: BaseSyntheticEvent) => {
-        setSelectedFileContent(event.target.value);
+        setSelectedFileContent(event?.target?.value);
     }
-    const onSaveContent = (event: BaseSyntheticEvent) => {
-        event.stopPropagation();
-        event.preventDefault();
+    const onSaveContent = () => {
         const newFiles = { ...files, [selectedFileName]: selectedFileContent };
         setFiles(newFiles);
     }
