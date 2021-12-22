@@ -1,96 +1,92 @@
-import { BaseSyntheticEvent, useEffect, useRef, useState } from 'react';
+import { BaseSyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
 
-import { Files, ProjectFile } from '../../types';
+import { ProjectFiles } from '../../types';
+import { FILES_KEY } from '../../constants';
 import './index.css';
 
 const reader = new FileReader();
-const FILES_KEY = 'files';
-function replacer(key: string, value: any) {
-    // Filtering out properties
-    if (value instanceof File) {
-        const jsonObj: any = {};
-
-        // Object.keys will list all 'enumerable' properties
-        // First we look at all own properties of 'this'
-        Object.keys(value).forEach((k: string) => {
-            jsonObj[k] = (value as any)[k];
-        });
-        // Then we look at all own properties of this's 'prototype'
-        Object.keys(Object.getPrototypeOf(value)).forEach(function(k: string) {
-            jsonObj[k] = (value as any)[k];
-        });
-        return JSON.stringify(jsonObj)
-    }
-    return value;
-}
 
 export const MemoryLibrary = () => {
     const inputFile = useRef(null);
     const [selectedFileName, setSelectedFileName] = useState('');
     const [selectedFileContent, setSelectedFileContent] = useState('');
+    const [newFileName, setNewFileName] = useState('');
+    const [files, setFiles] = useState({} as ProjectFiles);
 
-    const data = JSON.parse(localStorage.getItem(FILES_KEY) || '{}');
+    useEffect(() => {
+        const data = JSON.parse(localStorage.getItem(FILES_KEY) || '{}');
+        setFiles(data);
+    }, []);
+
+    useEffect(() => {
+        localStorage.setItem(FILES_KEY, JSON.stringify(files));
+    }, [files]);
  
-    function updateFiles (file: ProjectFile ) {
-        const files = JSON.parse(localStorage.getItem(FILES_KEY) || '{}');
-        const newFiles = (files || {}) as Files;
-        if (!file) {
-            return newFiles;
+    function updateFiles (file: File) {
+        if (file) {
+            try {
+                setNewFileName(file.name);
+                reader.readAsText(file);
+            } catch (err) {
+                console.error(err);
+            }
         }
-        const fileName: string = file?.name || '';
-        newFiles[fileName] = file;
-
-        localStorage.setItem(FILES_KEY, JSON.stringify(newFiles, replacer));
     };
 
+    const readerLoadEventHandler = useCallback(() => {
+        if (newFileName) {
+            const newFileContent = reader?.result as string;
+            setFiles(files => ({ ...files, [newFileName]: newFileContent }));
+            setNewFileName('');
+        }
+    }, [newFileName]);
+
     useEffect(() => {
-        const readerLoadEventHandler = () => {
-            setSelectedFileContent(reader?.result as string);
-        };
-        reader.addEventListener('load', readerLoadEventHandler, false);
+        reader.addEventListener('loadend', readerLoadEventHandler, false);
 
         return () => {
-            reader.removeEventListener('load', readerLoadEventHandler, false);
+            reader.removeEventListener('loadend', readerLoadEventHandler, false);
         };
-    }, []);
- 
-    useEffect(() => {
-        if (selectedFileName.length < 1) {
-            return;
-        }
+    }, [readerLoadEventHandler]);
 
-        try {
-            reader.readAsText(JSON.parse((data as ProjectFile)?.[selectedFileName] as string));
-        } catch (err) {
-            setSelectedFileContent(`${selectedFileName}\n${err}`);
-        }
-    }, [selectedFileName, data]);
-
-    const onButtonClick = () => {
+    const onOpenFileButtonClick = () => {
         if (inputFile?.current) {
             (inputFile.current as HTMLInputElement).click();
         }
+    };
+    const onSelectFileButtonClick = (fileKey: string) => () => {
+        setSelectedFileName(fileKey);
+        setSelectedFileContent(files[fileKey] || '');
     };
     const onChangeFile = (event: BaseSyntheticEvent) => {
         event.stopPropagation();
         event.preventDefault();
         updateFiles(event?.target?.files?.[0]);
     }
+    const onChangeContent = (event: BaseSyntheticEvent) => {
+        setSelectedFileContent(event.target.value);
+    }
+    const onSaveContent = (event: BaseSyntheticEvent) => {
+        event.stopPropagation();
+        event.preventDefault();
+        const newFiles = { ...files, [selectedFileName]: selectedFileContent };
+        setFiles(newFiles);
+    }
 
     return (<div>
         <input type='file' id='file' ref={inputFile} style={{ display: 'none' }} onChange={onChangeFile} />
-        <button onClick={onButtonClick}>Open file</button>
+        <button onClick={onOpenFileButtonClick}>Open file</button>
         <ul className='files-list'>
-            {Object.keys(data || {}).map((fileKey: string) => {
+            {Object.keys(files || {}).map((fileKey: string) => {
                 let className = 'file-name';
                 if (selectedFileName === fileKey) {
                     className += ' active';
                 }
                 return (<li key={fileKey}>
-                    <button onClick={() => setSelectedFileName(fileKey)} className={className}>{fileKey}</button>
+                    <button onClick={onSelectFileButtonClick(fileKey)} className={className}>{fileKey}</button>
                 </li>);
             })}
         </ul>
-        {selectedFileName.length > 0 && <textarea defaultValue={selectedFileContent} />}
+        {selectedFileName.length > 0 && <textarea value={selectedFileContent} onChange={onChangeContent} onBlur={onSaveContent} />}
     </div>);
 };
