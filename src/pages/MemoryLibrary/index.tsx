@@ -1,8 +1,9 @@
 import { BaseSyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { useRecoilState, useRecoilValue } from 'recoil';
 
-import { ProjectFiles } from '../../types';
-import { FILES_KEY } from '../../constants';
+import { filesState, fileState } from '../../recoil';
 import './index.css';
+import { ProjectFiles } from '../../types';
 
 const reader = new FileReader();
 
@@ -11,17 +12,9 @@ export const MemoryLibrary = () => {
     const [selectedFileName, setSelectedFileName] = useState('');
     const [selectedFileContent, setSelectedFileContent] = useState('');
     const [newFileName, setNewFileName] = useState('');
-    const [files, setFiles] = useState({} as ProjectFiles);
+    const [files, setFiles] = useRecoilState(filesState);
+    console.log(useRecoilValue(fileState(selectedFileName)))
 
-    useEffect(() => {
-        const data = JSON.parse(localStorage.getItem(FILES_KEY) || '{}');
-        setFiles(data);
-    }, []);
-
-    useEffect(() => {
-        localStorage.setItem(FILES_KEY, JSON.stringify(files));
-    }, [files]);
- 
     function updateFiles (file: File) {
         if (file) {
             try {
@@ -39,7 +32,7 @@ export const MemoryLibrary = () => {
             setFiles(files => ({ ...files, [newFileName]: newFileContent }));
             setNewFileName('');
         }
-    }, [newFileName]);
+    }, [newFileName, setFiles]);
 
     useEffect(() => {
         reader.addEventListener('loadend', readerLoadEventHandler, false);
@@ -56,7 +49,7 @@ export const MemoryLibrary = () => {
     };
     const onSelectFileButtonClick = (fileKey: string) => () => {
         setSelectedFileName(fileKey);
-        setSelectedFileContent(files[fileKey] || '');
+        setSelectedFileContent((files as ProjectFiles)[fileKey] || '');
     };
     const onChangeFile = (event: BaseSyntheticEvent) => {
         event.stopPropagation();
