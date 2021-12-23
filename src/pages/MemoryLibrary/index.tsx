@@ -1,4 +1,5 @@
 import { BaseSyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
+import localforage from 'localforage';
 
 import { ProjectFiles } from '../../types';
 import { FILES_KEY } from '../../constants';
@@ -14,12 +15,13 @@ export const MemoryLibrary = () => {
     const [files, setFiles] = useState({} as ProjectFiles);
 
     useEffect(() => {
-        const data = JSON.parse(localStorage.getItem(FILES_KEY) || '{}');
-        setFiles(data);
+        localforage.getItem(FILES_KEY)
+            .then((data) => setFiles(data as ProjectFiles))
+            .catch((err) => console.error(err));
     }, []);
 
     useEffect(() => {
-        localStorage.setItem(FILES_KEY, JSON.stringify(files));
+        localforage.setItem(FILES_KEY, files);
     }, [files]);
  
     function updateFiles (file: File) {
